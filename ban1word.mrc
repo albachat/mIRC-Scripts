@@ -1,4 +1,4 @@
-; This script bans users who send multiple lines with only one word.
+; This script bans users who send multiple lines with only one word. 
 
 ; Set the maximum allowed messages with only one word before banning
 var %maxSingleWordMessages = 3
