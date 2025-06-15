@@ -7,3 +7,4 @@ How to Use:
     Paste the script into the editor and click "OK".
     Adjust %maxSingleWordMessages to set the limit for how many single-word messages a user can send before getting banned.
     Save the script.
+    
