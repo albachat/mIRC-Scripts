@@ -1,25 +1,57 @@
-; This script bans users who send multiple lines with only one word. 
+; This script kicks users who send multiple single-word or single-character messages.
 
-; Set the maximum allowed messages with only one word before banning
+; Set the maximum allowed single-word or single-character messages before kicking
+var %maxSingleMessages = 3
+
+; Initialize a hash table to track the number of single-word or single-character messages per user
+on *:start:{
+  if (!$hget(singleword)) {
+    hmake singleword 100
+  }
+}
 
 on *:text:*:#:{
-  if ($network == Zemra) {
-    ; Check if the message contains only one word or one character
-    if (($numwords($1-) == 1) && ($len($1) <= 1)) {
-      ; Increase the counter for lines with only one character or one word
-      inc %checklines($nick)
-
-      ; If the user sends more than 2 lines with only one word or one character, ban them
-      if (%checklines($nick) >= 3) {
-        /mode # +b $address($nick, 2)
-        /ban # $address($nick, 2)
-        /kick # $nick You have been banned for sending multiple lines with only one word or character.
-        echo -a Ban $nick for sending multiple lines with only one word or character in #AlbaChat.
-      }
+  ; Check if the message contains only one word or a single character
+  if ($numtok($1-, 32) == 1) && ($len($1) <= 1) {
+    ; If it's a single character, consider it a spammy message
+    ; Increment the count of single-word or single-character messages for the user
+    var %messages = $hget(singleword, $nick)
+    if (%messages) {
+      hinc singleword $nick 1
+    } else {
+      hadd singleword $nick 1
     }
-    else {
-      ; Reset the counter if the message has more than one word or character
-      set %checklines($nick) 0
+    
+    ; If the user has sent more than the allowed number of single-word/single-character messages, kick them
+    if ($hget(singleword, $nick) >= %maxSingleMessages) {
+      kick # $nick You have been kicked for sending too many single-word or single-character messages.
+      hdel singleword $nick  ; Reset the user's count
     }
   }
+  ; Also check for single-word messages (not just characters)
+  elseif ($numtok($1-, 32) == 1) {
+    ; Increment the count for single-word messages
+    var %messages = $hget(singleword, $nick)
+    if (%messages) {
+      hinc singleword $nick 1
+    } else {
+      hadd singleword $nick 1
+    }
+
+    ; If the user has sent more than the allowed number of single-word messages, kick them
+    if ($hget(singleword, $nick) >= %maxSingleMessages) {
+      kick # $nick You have been kicked for sending too many single-word messages.
+      hdel singleword $nick  ; Reset the user's count
+    }
+  }
+}
+
+on *:PART:#:{
+  ; Reset the user's count when they leave the channel
+  hdel singleword $nick
+}
+
+on *:QUIT:{
+  ; Reset the user's count when they quit mIRC
+  hdel singleword $nick
 }
